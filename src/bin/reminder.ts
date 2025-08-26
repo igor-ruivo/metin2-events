@@ -1,5 +1,5 @@
 import { config, validateConfig } from '../config';
-import { getCurrentMonthSchedule } from '../scraper';
+import { getSchedule } from '../scraper';
 
 interface DiscordWebhookPayload {
 	content?: string;
@@ -45,7 +45,7 @@ async function sendDiscordWebhook(
 
 async function sendDailyReminder(webhookUrl: string): Promise<void> {
 	try {
-		const schedule = await getCurrentMonthSchedule();
+		const schedule = await getSchedule('week');
 		if (!schedule) {
 			console.log('⚠️ No schedule found for current month');
 			return;
@@ -88,7 +88,7 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 
 async function checkUpcomingEvents(webhookUrl: string): Promise<void> {
 	try {
-		const schedule = await getCurrentMonthSchedule();
+		const schedule = await getSchedule();
 		if (!schedule) return;
 
 		const now = new Date();

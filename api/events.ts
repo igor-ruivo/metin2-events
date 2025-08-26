@@ -1,14 +1,12 @@
 import { verifyKey } from 'discord-interactions';
 
-import {
-	formatScheduleForDiscord,
-	getCurrentMonthSchedule,
-} from '../src/scraper';
+import { formatScheduleForDiscord, getSchedule } from '../src/scraper';
 
 interface DiscordInteraction {
 	type: number;
 	data?: {
 		name?: string;
+		options?: Array<{ name: string; value: string }>;
 	};
 }
 
@@ -105,7 +103,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 		console.log('✅ Command received:', interaction.data?.name);
 
 		if (interaction.data?.name === 'events') {
-			const schedule = await getCurrentMonthSchedule();
+			const periodOption = interaction.data.options?.find(
+				(o) => o.name === 'period'
+			);
+			const period = periodOption?.value ?? 'month';
+
+			console.log(`parsed period: ${period}`);
+
+			const schedule = await getSchedule(period);
 
 			if (!schedule) {
 				console.log('⚠️ No schedule found');

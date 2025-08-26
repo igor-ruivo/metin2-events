@@ -181,28 +181,28 @@ export function formatScheduleForDiscord(schedule: MonthlySchedule): string {
 	return lines.join('\n');
 }
 
-export async function getCurrentMonthSchedule(): Promise<MonthlySchedule | null> {
+export async function getSchedule(
+	pediod = 'month'
+): Promise<MonthlySchedule | null> {
 	const threads = await findTigerghostThreads();
 	const now = new Date();
 	const currentMonth = now.getMonth();
 	const currentYear = now.getFullYear();
 
-	const parsedThreads = threads
-		.filter((t) => {
-			const { monthIndex, year } = extractMonthYearFromTitle(t.title);
-			return monthIndex === currentMonth && year === currentYear;
-		})
-		.map((t) => parseThreadToSchedule(t.title, t.href));
+	const parsedThread = threads.find((t) => {
+		const { monthIndex, year } = extractMonthYearFromTitle(t.title);
+		if (pediod === 'next') {
+			if (currentMonth === 11) {
+				return monthIndex === 0 && year === currentYear + 1;
+			}
+			return monthIndex === currentMonth + 1 && year === currentYear;
+		}
+		return monthIndex === currentMonth && year === currentYear;
+	});
 
-	const start = performance.now();
-	const answers = await Promise.all(parsedThreads);
-	console.log(
-		`Took ${performance.now() - start} ms to fetch all ${parsedThreads.length} threads.`
-	);
+	if (!parsedThread) {
+		return null;
+	}
 
-	return (
-		answers.find(
-			(a) => a && a.month === currentMonth && a.year === currentYear
-		) ?? null
-	);
+	return parseThreadToSchedule(parsedThread.title, parsedThread.href);
 }
