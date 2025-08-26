@@ -1,5 +1,5 @@
-import { getCurrentMonthSchedule } from './scraper';
-import { config, validateConfig } from './config';
+import { config, validateConfig } from '../config';
+import { getCurrentMonthSchedule } from '../scraper';
 
 interface DiscordWebhookPayload {
 	content?: string;
@@ -17,7 +17,10 @@ interface DiscordWebhookPayload {
 	}>;
 }
 
-async function sendDiscordWebhook(webhookUrl: string, payload: DiscordWebhookPayload): Promise<void> {
+async function sendDiscordWebhook(
+	webhookUrl: string,
+	payload: DiscordWebhookPayload
+): Promise<void> {
 	try {
 		const response = await fetch(webhookUrl, {
 			method: 'POST',
@@ -156,7 +159,7 @@ async function checkUpcomingEvents(webhookUrl: string): Promise<void> {
 
 async function main(): Promise<void> {
 	validateConfig();
-	
+
 	const webhookUrl = config.webhookUrl;
 	if (!webhookUrl) {
 		console.error('❌ Webhook URL not found in configuration');

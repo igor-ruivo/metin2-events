@@ -2,10 +2,7 @@ name: Metin2 Events Reminders
 
 on:
   schedule:
-    # Daily reminder at 09:00 Lisbon time (08:00 UTC)
-    - cron: '0 8 * * *'
-    # Check every 15 minutes for upcoming events (every 15 min UTC)
-    - cron: '*/15 * * * *'
+    - cron: '0 11 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -28,16 +25,3 @@ jobs:
         run: npm run reminder
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-
-      - name: Send Discord notification
-        if: always()
-        run: |
-          if [ "${{ job.status }}" == "success" ]; then
-            curl -X POST ${{ secrets.DISCORD_WEBHOOK_URL }} \
-              -H "Content-Type: application/json" \
-              -d '{"content":"✅ Reminders processed successfully"}'
-          else
-            curl -X POST ${{ secrets.DISCORD_WEBHOOK_URL }} \
-              -H "Content-Type: application/json" \
-              -d '{"content":"❌ Reminder processing failed"}'
-          fi
