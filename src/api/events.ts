@@ -9,6 +9,7 @@ interface DiscordInteraction {
 
 interface DiscordResponse {
 	type: number;
+	
 	data?: {
 		content?: string;
 		embeds?: Array<{
