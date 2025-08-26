@@ -1,0 +1,12 @@
+{
+	"version": 2,
+	"functions": {
+		"src/api/events.ts": {
+			"maxDuration": 30
+		}
+	},
+	"env": {
+		"DISCORD_PUBLIC_KEY": "@discord_public_key",
+		"DISCORD_APPLICATION_ID": "@discord_application_id"
+	}
+}

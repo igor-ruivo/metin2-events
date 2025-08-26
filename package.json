@@ -4,7 +4,13 @@
 	"description": "A discord bot for alerting about events in Metin2",
 	"main": "index.ts",
 	"scripts": {
+		"start": "tsx src/bin/index.ts",
+		"dev": "tsx --watch src/bin/index.ts",
 		"run": "tsx src/bin/index.ts",
+		"scraper": "tsx src/bin/scraper.ts",
+		"reminder": "tsx src/reminder.ts",
+		"test:reminder": "tsx src/reminder.ts",
+		"test:scraper": "tsx src/bin/scraper.ts",
 		"lint": "npx eslint --fix --ext .ts ./src ./eslint.config.cjs ./prettier.config.cjs ./package.json ./tsconfig.json 2>&1 && pnpm run format && pnpm tsc --noEmit",
 		"format": "npx prettier --write \"src/**/*.{ts,js,json,css,md}\" *.json *.md *.cjs",
 		"build": "pnpm tsc",
@@ -20,12 +26,16 @@
 	"license": "ISC",
 	"dependencies": {
 		"@types/jsdom": "^21.1.7",
-		"jsdom": "^26.1.0"
+		"discord.js": "^14.22.1",
+		"dotenv": "^17.2.1",
+		"jsdom": "^26.1.0",
+		"node-cron": "^4.2.1"
 	},
 	"devDependencies": {
 		"@ti-platform/aide-build-tools": "^4.1.0",
 		"@tsconfig/recommended": "^1.0.10",
 		"@types/node": "^24.0.13",
+		"@types/node-cron": "^3.0.11",
 		"@typescript-eslint/parser": "^8.36.0",
 		"eslint": "^9.31.0",
 		"eslint-plugin-promise": "^7.2.1",
