@@ -34,9 +34,6 @@ const ptMonthToIndex: Record<string, number> = {
 	dezembro: 11,
 };
 
-const sleep = (ms: number) =>
-	new Promise<void>((resolve) => setTimeout(resolve, ms));
-
 async function fetchHtml(url: string): Promise<string> {
 	const res = await fetch(url, {
 		headers: {
@@ -47,7 +44,7 @@ async function fetchHtml(url: string): Promise<string> {
 	return await res.text();
 }
 
-function extractMonthYearFromTitle(title: string): {
+export function extractMonthYearFromTitle(title: string): {
 	monthIndex: number | null;
 	year: number | null;
 } {
@@ -71,13 +68,18 @@ export async function findTigerghostThreads(): Promise<
 	const html = await fetchHtml(FORUM_URL);
 	const dom = new JSDOM(html);
 	const doc = dom.window.document;
-	const anchors = Array.from(doc.querySelectorAll('a'));
+	const anchors: Array<HTMLAnchorElement> = Array.from(
+		doc
+			.getElementById('content')
+			?.querySelectorAll('[data-thread-id] a[href]') ?? []
+	);
 	const threads = anchors
 		.filter((a) => /tigerghost/i.test(a.textContent || ''))
 		.map((a) => ({
 			title: (a.textContent || '').trim(),
 			href: new URL(a.href, FORUM_URL).toString(),
 		}));
+	console.log(`Found ${threads.length} threads.`);
 	return threads;
 }
 
@@ -141,8 +143,9 @@ export async function parseThreadToSchedule(
 	title: string,
 	href: string
 ): Promise<MonthlySchedule | null> {
+	const start = performance.now();
 	const html = await fetchHtml(href);
-	await sleep(300);
+	console.log(`Took ${performance.now() - start} ms to fetch ${href}.`);
 	const dom = new JSDOM(html);
 	const doc = dom.window.document;
 	const { monthIndex, year } = extractMonthYearFromTitle(title);
@@ -184,17 +187,22 @@ export async function getCurrentMonthSchedule(): Promise<MonthlySchedule | null>
 	const currentMonth = now.getMonth();
 	const currentYear = now.getFullYear();
 
-	// Find the thread for current month
-	for (const thread of threads) {
-		const schedule = await parseThreadToSchedule(thread.title, thread.href);
-		if (
-			schedule &&
-			schedule.month === currentMonth &&
-			schedule.year === currentYear
-		) {
-			return schedule;
-		}
-	}
+	const parsedThreads = threads
+		.filter((t) => {
+			const { monthIndex, year } = extractMonthYearFromTitle(t.title);
+			return monthIndex === currentMonth && year === currentYear;
+		})
+		.map((t) => parseThreadToSchedule(t.title, t.href));
 
-	return null;
+	const start = performance.now();
+	const answers = await Promise.all(parsedThreads);
+	console.log(
+		`Took ${performance.now() - start} ms to fetch all ${parsedThreads.length} threads.`
+	);
+
+	return (
+		answers.find(
+			(a) => a && a.month === currentMonth && a.year === currentYear
+		) ?? null
+	);
 }

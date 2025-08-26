@@ -85,8 +85,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 		process.env.DISCORD_PUBLIC_KEY!
 	);
 
-	console.log(`key:${process.env.DISCORD_PUBLIC_KEY}`);
-
 	if (!isValid) {
 		console.log('❌ Invalid signature');
 		return res.status(401).json({ error: 'Bad request signature' });
