@@ -3,6 +3,7 @@ import { JSDOM } from 'jsdom';
 const FORUM_URL =
 	'https://board.pt.metin2.gameforge.com/index.php?board/86-eventos-metin2-pt/';
 
+
 export type DailyEvents = {
 	day: number;
 	event1?: string;
@@ -190,7 +191,7 @@ export function formatScheduleForDiscord(
 		const day = schedule.days.find((d) => d.day === now.getDate());
 		if (!day) return '❌ Não há eventos hoje.';
 		lines.push(
-			`**Hoje, ${String(day.day).padStart(2, '0')}/${schedule.month + 1}**`
+			`**Hoje, ${String(day.day).padStart(2, '0')}/${schedule.month + 1}**\n`
 		);
 		lines.push(`• **Evento 1**: ${day.event1 ?? '-'}`);
 		lines.push(`• **Evento 2**: ${day.event2 ?? '-'}`);
@@ -208,7 +209,7 @@ export function formatScheduleForDiscord(
 					? ' 🎯'
 					: '';
 			lines.push(
-				`**${weekdays[d.getDay()]}, ${String(dayNumber).padStart(2, '0')}/${d.getMonth() + 1}${todayMark}**`
+				`\n**${weekdays[d.getDay()]}, ${String(dayNumber).padStart(2, '0')}/${d.getMonth() + 1}${todayMark}**`
 			);
 			if (dayEntry) {
 				lines.push(`• **Evento 1**: ${dayEntry.event1 ?? '-'}`);
@@ -226,7 +227,7 @@ export function formatScheduleForDiscord(
 			const syntheticDate = new Date(schedule.year, schedule.month, d.day);
 			const todayMark = isCurrentMonth && d.day === now.getDate() ? ' 🎯' : '';
 			lines.push(
-				`**${weekdays[syntheticDate.getDay()]}, ${String(d.day).padStart(2, '0')}/${schedule.month + 1}${todayMark}**`
+				`\n**${weekdays[syntheticDate.getDay()]}, ${String(d.day).padStart(2, '0')}/${schedule.month + 1}${todayMark}**`
 			);
 			lines.push(`• **Evento 1**: ${d.event1 ?? '-'}`);
 			lines.push(`• **Evento 2**: ${d.event2 ?? '-'}`);

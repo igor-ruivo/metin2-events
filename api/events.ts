@@ -96,7 +96,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 			const periodOption = interaction.data.options?.find(
 				(o) => o.name === 'period'
 			);
-			const period = periodOption?.value ?? 'month';
+			const period = periodOption?.value ?? 'week';
 
 			const schedule = await getSchedule(period);
 
@@ -136,10 +136,10 @@ const periodToTitle = (period: string) => {
 			return 'Próximo Mês';
 		case 'today':
 			return 'Hoje';
-		case 'week':
-			return 'Esta Semana';
-		default:
+		case 'month':
 			return 'Este Mês';
+		default:
+			return 'Esta Semana';
 	}
 };
 
