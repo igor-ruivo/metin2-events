@@ -47,8 +47,8 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 
 				const embeds: DiscordWebhookPayload['embeds'] = [
 					{
-						title: '⏰ Evento do Dia',
-						description: `**${label} (${name}) começa dentro de ${minutes} minutos**`,
+						title: '📅 Contagem Decrescente!',
+						description: `**${label}**: ${name}\n⏰ Começa dentro de ${minutes} minutos`,
 						color: 0xffa500,
 						timestamp: new Date().toISOString(),
 					},
@@ -58,7 +58,7 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 					embeds[0].fields = [
 						{
 							name: 'Evento Adicional',
-							value: `Também não te esqueças do evento adicional de hoje: ${todayEvents.extra}!`,
+							value: `Não te esqueças do evento adicional de hoje:\n${todayEvents.extra}!`,
 							inline: false,
 						},
 					];
