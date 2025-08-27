@@ -5,6 +5,10 @@ on:
     - cron: '0 23,0 * * *'
   workflow_dispatch: # Allow manual trigger
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   send-reminders:
     runs-on: ubuntu-latest
@@ -45,6 +49,36 @@ jobs:
       - name: Refresh cached data
         if: env.run_job == 'true'
         run: pnpm run refresh
+        id: generate-data
+
+      - name: Commit and push data files
+        run: |
+          git config --local user.email "igor.ruivo.97@gmail.com"
+          git config --local user.name "Igor Ruivo"
+          git add data/*.json || true
+
+          # Check if there are staged changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            # Commit and push changes
+            git commit -m "Refresh Tigerghost Metin2 Events - $(date)"
+            git push
+          fi
+
+      - name: Send Discord notification on failure
+        if: failure() && steps.generate-data.outcome == 'failure'
+        run: |
+          echo "Sending Discord notification for generate-data failure"
+
+          # Create JSON payload for failure notification
+          JSON_PAYLOAD="{\"content\":\"<@&1410116889740316684>\",\"embeds\":[{\"title\":\"❌ Erro ao Atualizar Eventos\",\"description\":\"Ocorreu um erro durante a atualização dos eventos do Metin2 Tigerghost. Os eventos poderão estar desatualizados.\",\"color\":16711680,\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%S.000Z)\"}]}"
+
+          curl -X POST "$DISCORD_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$JSON_PAYLOAD"
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
 
       - name: Run reminder script
         if: env.run_job == 'true'
