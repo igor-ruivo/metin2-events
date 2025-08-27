@@ -2,7 +2,7 @@ name: Metin2 Current Event Reminder
 
 on:
   schedule:
-    - cron: '30 * * * *' # run every hour at minute 30
+    - cron: '30 13,14,17,18 * * *' # runs at 1, 2, 5 and 6pm UTC at minute 30
   workflow_dispatch: # Allow manual trigger
 
 jobs:
