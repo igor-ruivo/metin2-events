@@ -12,19 +12,20 @@ interface DiscordInteraction {
 	};
 }
 
-type Embeds = Array<{
+export type Embed = {
 	title?: string;
 	description?: string;
 	color?: number;
 	timestamp?: string;
 	footer?: { text: string };
-}>;
+	unavailable?: boolean;
+};
 
 interface DiscordResponse {
 	type: number;
 	data?: {
 		content?: string;
-		embeds?: Embeds;
+		embeds?: Array<Embed>;
 		flags?: number;
 	};
 }
@@ -102,12 +103,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 			);
 			const period = periodOption?.value ?? 'week';
 
-			const computed = await fetchPeriodFile<Embeds>(period);
+			const computed = await fetchPeriodFile<Array<Embed>>(period);
 
 			if (computed) {
 				console.log(
 					`Previously computed. Took ${performance.now() - start} ms.`
 				);
+				if (computed.length > 0 && computed[0].unavailable) {
+					return res.json({
+						type: 4,
+						data: {
+							content: `❌ Não há nada agendado (${periodToTitle(period)}).`,
+							flags: 64,
+						},
+					});
+				}
 				return res.json({
 					type: 4,
 					data: {
@@ -173,7 +183,10 @@ const periodToTitle = (period: string) => {
 	}
 };
 
-export const getEmbeds = (period: string, schedule: MonthlySchedule) => {
+export const getEmbeds = (
+	period: string,
+	schedule: MonthlySchedule
+): Array<Embed> => {
 	const now = portugalNow();
 	const formatted = now.toLocaleString('pt-PT', {
 		day: '2-digit',

@@ -1,6 +1,7 @@
 import { constants } from 'fs';
 import { access, mkdir, writeFile } from 'fs/promises';
 
+import type { Embed } from '../../api/api';
 import { getEmbeds } from '../../api/api';
 import { getSchedule } from '../scraper';
 
@@ -23,14 +24,20 @@ async function main(): Promise<void> {
 			try {
 				const schedule = await getSchedule(period);
 
+				const filePath = `${dataDir}/${period}.json`;
+
 				if (!schedule) {
 					console.warn(`⚠️ Não há eventos para ${period}.`);
+					const syntheticEmbed: Embed = { unavailable: true };
+					await writeFile(
+						filePath,
+						JSON.stringify([syntheticEmbed], null, 2),
+						'utf-8'
+					);
 					return;
 				}
 
 				const embeds = getEmbeds(period, schedule);
-
-				const filePath = `${dataDir}/${period}.json`;
 				await writeFile(filePath, JSON.stringify(embeds, null, 2), 'utf-8');
 
 				console.log(`✅ Guardado ${filePath}`);
