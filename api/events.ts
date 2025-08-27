@@ -28,7 +28,7 @@ interface DiscordResponse {
 interface VercelRequest {
 	headers: Record<string, string | Array<string>>;
 	method: string;
-	on: (event: string, callback: (chunk?: string) => void) => void; // porque vamos ler o body manualmente
+	on: (event: string, callback: (chunk?: string) => void) => void;
 }
 
 interface VercelResponse {
@@ -62,19 +62,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 	}
 
 	const rawBody = await buffer(req);
-	console.log('📥 Raw body:', rawBody);
-
 	const stringifiedBody = rawBody.toString('utf8');
-
-	console.log('📥 Raw body (readable):', stringifiedBody);
 
 	const signature = req.headers['x-signature-ed25519'] as string;
 	const timestamp = req.headers['x-signature-timestamp'] as string;
-
-	console.log('📥 Headers:', {
-		'x-signature-ed25519': signature,
-		'x-signature-timestamp': timestamp,
-	});
 
 	const isValid = await verifyKey(
 		rawBody,
@@ -100,56 +91,63 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 	// SLASH COMMAND
 	if (interaction.type === 2) {
-		console.log('✅ Command received:', interaction.data?.name);
-
 		if (interaction.data?.name === 'events') {
 			const periodOption = interaction.data.options?.find(
 				(o) => o.name === 'period'
 			);
 			const period = periodOption?.value ?? 'month';
 
-			console.log(`parsed period: ${period}`);
-
 			const schedule = await getSchedule(period);
 
 			if (!schedule) {
-				console.log('⚠️ No schedule found');
 				return res.json({
 					type: 4,
 					data: {
-						content: '❌ No schedule found for the current month.',
+						content: `❌ Não há nada agendado (${periodToTitle(period)}).`,
 						flags: 64,
 					},
 				});
 			}
 
-			console.log('✅ Schedule retrieved');
 			return res.json({
 				type: 4,
 				data: {
 					embeds: [
 						{
-							title: '📅 Metin2 Tigerghost Events - Current Month',
-							description: formatScheduleForDiscord(schedule),
+							title: `📅 Eventos Metin2 Tigerghost - ${periodToTitle(period)}`,
+							description: formatScheduleForDiscord(schedule, period),
 							color: 0x00ff00,
 							timestamp: new Date().toISOString(),
-							footer: { text: 'Events refresh automatically' },
+							footer: {
+								text: 'Evento 1 (15:00-19:00), Evento 2 (19:00-23:00)\nOs eventos estão sempre atualizados!',
+							},
 						},
 					],
 				},
 			});
 		}
 
-		console.log('❌ Unknown command');
 		return res.json({
 			type: 4,
 			data: {
-				content: '❌ Unknown command',
+				content: '❌ Comando inválido',
 				flags: 64,
 			},
 		});
 	}
 
-	console.log('❌ Unknown interaction type:', interaction.type);
-	return res.status(400).json({ error: 'Unknown interaction type' });
+	return res.status(400).json({ error: 'Interação inválida' });
 }
+
+const periodToTitle = (period: string) => {
+	switch (period) {
+		case 'next':
+			return 'Próximo Mês';
+		case 'today':
+			return 'Hoje';
+		case 'week':
+			return 'Esta Semana';
+		default:
+			return 'Este Mês';
+	}
+};

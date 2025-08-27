@@ -139,6 +139,12 @@ function parseMonthlyTable(document: Document): Array<DailyEvents> {
 	return [];
 }
 
+export function portugalNow(): Date {
+	return new Date(
+		new Date().toLocaleString('en-US', { timeZone: 'Europe/Lisbon' })
+	);
+}
+
 export async function parseThreadToSchedule(
 	title: string,
 	href: string
@@ -162,20 +168,69 @@ export async function parseThreadToSchedule(
 	};
 }
 
-export function formatScheduleForDiscord(schedule: MonthlySchedule): string {
-	const now = new Date();
-	const isCurrentMonth =
-		now.getMonth() === schedule.month && now.getFullYear() === schedule.year;
-
+export function formatScheduleForDiscord(
+	schedule: MonthlySchedule,
+	period: string
+): string {
+	const now = portugalNow();
+	const weekdays = [
+		'Domingo',
+		'Segunda-feira',
+		'Terça-feira',
+		'Quarta-feira',
+		'Quinta-feira',
+		'Sexta-feira',
+		'Sábado',
+	];
 	const lines: Array<string> = [];
+
 	lines.push(`**${schedule.threadTitle}**`);
 
-	for (const d of schedule.days.sort((a, b) => a.day - b.day)) {
-		const todayMark = isCurrentMonth && d.day === now.getDate() ? ' 🎯' : '';
+	if (period === 'today') {
+		const day = schedule.days.find((d) => d.day === now.getDate());
+		if (!day) return '❌ Não há eventos hoje.';
 		lines.push(
-			`${String(d.day).padStart(2, '0')}: ` +
-				`**E1:** ${d.event1 ?? '-'} | **E2:** ${d.event2 ?? '-'}${todayMark}`
+			`**Hoje, ${String(day.day).padStart(2, '0')}/${schedule.month + 1}**`
 		);
+		lines.push(`• **Evento 1**: ${day.event1 ?? '-'}`);
+		lines.push(`• **Evento 2**: ${day.event2 ?? '-'}`);
+	} else if (period === 'week') {
+		const start = new Date(now);
+		const dayOfWeek = start.getDay(); // 0 = Domingo
+		start.setDate(now.getDate() - dayOfWeek + 1); // ajusta para segunda-feira
+		for (let i = 0; i < 7; i++) {
+			const d = new Date(start);
+			d.setDate(start.getDate() + i);
+			const dayNumber = d.getDate();
+			const dayEntry = schedule.days.find((s) => s.day === dayNumber);
+			const todayMark =
+				now.getDate() === dayNumber && now.getMonth() === schedule.month
+					? ' 🎯'
+					: '';
+			lines.push(
+				`**${weekdays[d.getDay()]}, ${String(dayNumber).padStart(2, '0')}/${d.getMonth() + 1}${todayMark}**`
+			);
+			if (dayEntry) {
+				lines.push(`• **Evento 1**: ${dayEntry.event1 ?? '-'}`);
+				lines.push(`• **Evento 2**: ${dayEntry.event2 ?? '-'}`);
+			} else {
+				lines.push('• Nenhum evento.');
+			}
+		}
+	} else {
+		// month ou next
+		const isCurrentMonth =
+			now.getMonth() === schedule.month && now.getFullYear() === schedule.year;
+
+		for (const d of schedule.days.sort((a, b) => a.day - b.day)) {
+			const syntheticDate = new Date(schedule.year, schedule.month, d.day);
+			const todayMark = isCurrentMonth && d.day === now.getDate() ? ' 🎯' : '';
+			lines.push(
+				`**${weekdays[syntheticDate.getDay()]}, ${String(d.day).padStart(2, '0')}/${schedule.month + 1}${todayMark}**`
+			);
+			lines.push(`• **Evento 1**: ${d.event1 ?? '-'}`);
+			lines.push(`• **Evento 2**: ${d.event2 ?? '-'}`);
+		}
 	}
 
 	return lines.join('\n');
@@ -185,7 +240,7 @@ export async function getSchedule(
 	pediod = 'month'
 ): Promise<MonthlySchedule | null> {
 	const threads = await findTigerghostThreads();
-	const now = new Date();
+	const now = portugalNow();
 	const currentMonth = now.getMonth();
 	const currentYear = now.getFullYear();
 

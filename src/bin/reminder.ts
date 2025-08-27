@@ -1,5 +1,5 @@
 import { config, validateConfig } from '../config';
-import { getSchedule } from '../scraper';
+import { getSchedule, portugalNow } from '../scraper';
 
 interface DiscordWebhookPayload {
 	content?: string;
@@ -51,7 +51,7 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 			return;
 		}
 
-		const today = new Date().getDate();
+		const today = portugalNow().getDate();
 		const todayEvents = schedule.days.find((d) => d.day === today);
 
 		if (!todayEvents) {
@@ -91,7 +91,7 @@ async function checkUpcomingEvents(webhookUrl: string): Promise<void> {
 		const schedule = await getSchedule();
 		if (!schedule) return;
 
-		const now = new Date();
+		const now = portugalNow();
 		const currentHour = now.getHours();
 		const currentMinute = now.getMinutes();
 		const currentTime = currentHour * 60 + currentMinute;
@@ -166,7 +166,7 @@ async function main(): Promise<void> {
 		process.exit(1);
 	}
 
-	const now = new Date();
+	const now = portugalNow();
 	const currentHour = now.getHours();
 	const currentMinute = now.getMinutes();
 
