@@ -17,7 +17,7 @@ jobs:
           if [ "$HOUR" = "14" ] || [ "$HOUR" = "18" ]; then
             echo "run_job=true" >> $GITHUB_ENV
           else
-            echo "run_job=false" >> $GITHUB_ENV
+            echo "run_job=true" >> $GITHUB_ENV
           fi
 
       - name: Checkout repository
