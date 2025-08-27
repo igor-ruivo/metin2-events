@@ -1,5 +1,6 @@
 import { verifyKey } from 'discord-interactions';
 
+import type { MonthlySchedule } from '../src/scraper';
 import { formatScheduleForDiscord, getSchedule } from '../src/scraper';
 
 interface DiscordInteraction {
@@ -112,17 +113,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 			return res.json({
 				type: 4,
 				data: {
-					embeds: [
-						{
-							title: `📅 Eventos Metin2 Tigerghost - ${periodToTitle(period)}`,
-							description: formatScheduleForDiscord(schedule, period),
-							color: 0x00ff00,
-							timestamp: new Date().toISOString(),
-							footer: {
-								text: 'Evento 1 (15:00-19:00), Evento 2 (19:00-23:00)\nOs eventos estão sempre atualizados!',
-							},
-						},
-					],
+					embeds: getEmbeds(period, schedule),
 				},
 			});
 		}
@@ -150,4 +141,18 @@ const periodToTitle = (period: string) => {
 		default:
 			return 'Este Mês';
 	}
+};
+
+export const getEmbeds = (period: string, schedule: MonthlySchedule) => {
+	return [
+		{
+			title: `📅 Eventos Metin2 Tigerghost - ${periodToTitle(period)}`,
+			description: formatScheduleForDiscord(schedule, period),
+			color: 0x00ff00,
+			timestamp: new Date().toISOString(),
+			footer: {
+				text: 'Evento 1 (15:00-19:00), Evento 2 (19:00-23:00)\nOs eventos estão sempre atualizados!',
+			},
+		},
+	];
 };

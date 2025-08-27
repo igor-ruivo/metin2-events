@@ -3,13 +3,15 @@
 	"version": "1.0.0",
 	"description": "A discord bot for alerting about events in Metin2",
 	"scripts": {
-		"reminder": "tsx src/bin/reminder.ts",
+		"now": "tsx src/bin/now.ts",
+		"weekly": "tsx src/bin/weekly.ts",
+		"daily": "tsx src/bin/daily.ts",
 		"register": "tsx src/bin/register.ts",
 		"list": "tsx src/bin/list.ts",
 		"lint": "npx eslint --fix --ext .ts ./src ./api ./eslint.config.cjs ./prettier.config.cjs ./package.json ./tsconfig.json 2>&1 && pnpm run format && pnpm tsc --noEmit",
 		"format": "npx prettier --write \"src/**/*.{ts,js,json,css,md}\" \"api/**/*.{ts,js,json,css,md}\" *.json *.md *.cjs",
 		"build": "pnpm tsc",
-		"debug": "npx tsx --inspect-brk src/bin/reminder.ts"
+		"debug": "npx tsx --inspect-brk src/bin/weekly.ts"
 	},
 	"keywords": [
 		"metin2",

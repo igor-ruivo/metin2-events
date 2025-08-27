@@ -1,4 +1,4 @@
-name: Metin2 Events Reminders
+name: Metin2 Daily Event Reminder
 
 on:
   schedule:
@@ -28,6 +28,6 @@ jobs:
         run: pnpm install
 
       - name: Run reminder script
-        run: pnpm run reminder
+        run: pnpm run weekly
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
