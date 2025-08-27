@@ -1,4 +1,4 @@
-name: Metin2 Daily Event Reminder
+name: Metin2 Current Event Reminder
 
 on:
   schedule:
