@@ -7,56 +7,36 @@ const config = {
 	clientId: process.env.DISCORD_CLIENT_ID,
 };
 
-void (async () => {
-	// Pega todos os comandos globais
-	const commands: Array<{
-		name: string;
-		id: string;
-		options: Array<{
-			name: string;
-			choices: Array<{ name: string; value: string }>;
-		}>;
-	}> = (await (
-		await fetch(
-			`https://discord.com/api/v10/applications/${config.clientId}/commands`,
-			{ headers: { Authorization: `Bot ${config.token}` } }
-		)
-	).json()) as Array<{
-		name: string;
-		id: string;
-		options: Array<{
-			name: string;
-			choices: Array<{ name: string; value: string }>;
-		}>;
-	}>;
+const main = async () => {
+	const BOT_TOKEN = config.token;
+	const CLIENT_ID = config.clientId;
 
-	const command = commands.find((c) => c.name === 'events');
-	if (!command) {
-		console.log('Couldnt find command');
-		return;
-	}
-	const option = command.options.find(
-		(o: { name: string }) => o.name === 'period'
-	);
+	const body = {
+		name: 'ping',
+		description: 'Efetua um ping ao servidor.',
+	};
 
-	if (!option) {
-		console.log('couldnt find option');
-		return;
-	}
-
-	option.choices.push({ name: 'next', value: 'next' });
-
-	await fetch(
-		`https://discord.com/api/v10/applications/${config.clientId}/commands/${command.id}`,
+	const res = await fetch(
+		`https://discord.com/api/v10/applications/${CLIENT_ID}/commands`,
 		{
-			method: 'PATCH',
+			method: 'POST',
 			headers: {
-				'Authorization': `Bot ${config.token}`,
 				'Content-Type': 'application/json',
+				'Authorization': `Bot ${BOT_TOKEN}`,
 			},
-			body: JSON.stringify(command),
+			body: JSON.stringify(body),
 		}
 	);
 
-	console.log('Comando atualizado!');
-})();
+	if (!res.ok) {
+		console.error(`Request failed: ${res.status} ${res.statusText}`);
+		const err = await res.text();
+		console.error(err);
+		return;
+	}
+
+	const ans: unknown = await res.json();
+	console.log(JSON.stringify(ans, null, 2));
+};
+
+void main();

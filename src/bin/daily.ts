@@ -1,4 +1,4 @@
-import { getEmbeds } from '../../api/events';
+import { getEmbeds } from '../../api/api';
 import { config, validateConfig } from '../config';
 import { getSchedule } from '../scraper';
 import { sendDiscordWebhook } from '../utils';

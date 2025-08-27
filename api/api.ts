@@ -118,6 +118,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 			});
 		}
 
+		if (interaction.data?.name === 'ping') {
+			return res.json({
+				type: 4,
+				data: {
+					content: 'Hey!',
+				},
+			});
+		}
+
 		return res.json({
 			type: 4,
 			data: {

@@ -261,7 +261,23 @@ export async function parseThreadToSchedule(
 					days.push(dayObj);
 				}
 
-				dayObj.extra = event;
+				dayObj.extra = event
+					.replaceAll('Harvest Festival', 'Caça os Saqueadores')
+					.replaceAll('Mining event', 'Spawn de Veios')
+					.replaceAll('(Map: ', '(')
+					.replaceAll('Deserto', 'Desert')
+					.replaceAll('Desert', 'Deserto')
+					.replaceAll(' and ', ' e ')
+					.replaceAll(' and ', ' e ')
+					.replaceAll('Catch carp', 'Captura de Carpas')
+					.replaceAll(
+						'Mysterious Chest , can be received at an event at the Fisherman in exchange for a living Carp',
+						'poderás trocar Carpas vivas por Caixas Mistério no Pescador'
+					);
+
+				if (dayObj.extra.endsWith(' )')) {
+					dayObj.extra = dayObj.extra.replace(/ \)$/, ')');
+				}
 			});
 		});
 	}
