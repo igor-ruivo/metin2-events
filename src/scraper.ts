@@ -1,13 +1,18 @@
 import { JSDOM } from 'jsdom';
 
+import { convertCestToLisbon, portugalNow } from './utils';
+
 const FORUM_URL =
 	'https://board.pt.metin2.gameforge.com/index.php?board/86-eventos-metin2-pt/';
 
+const UK_FORUM_URL =
+	'https://board.en.metin2.gameforge.com/index.php?board/176-events/';
 
 export type DailyEvents = {
 	day: number;
 	event1?: string;
 	event2?: string;
+	extra?: string;
 };
 
 export type MonthlySchedule = {
@@ -19,20 +24,32 @@ export type MonthlySchedule = {
 	threadUrl: string;
 };
 
-const ptMonthToIndex: Record<string, number> = {
+const monthToIndex: Record<string, number> = {
 	janeiro: 0,
+	january: 0,
 	fevereiro: 1,
+	february: 1,
 	março: 2,
 	marco: 2,
+	march: 2,
 	abril: 3,
+	april: 3,
 	maio: 4,
+	may: 4,
 	junho: 5,
+	june: 5,
 	julho: 6,
+	july: 6,
 	agosto: 7,
+	august: 7,
 	setembro: 8,
+	september: 8,
 	outubro: 9,
+	october: 9,
 	novembro: 10,
+	november: 10,
 	dezembro: 11,
+	december: 11,
 };
 
 async function fetchHtml(url: string): Promise<string> {
@@ -53,12 +70,12 @@ export function extractMonthYearFromTitle(title: string): {
 		.toLowerCase()
 		.normalize('NFD')
 		.replace(/[\u0300-\u036f]/g, '');
-	const monthKey = Object.keys(ptMonthToIndex).find((m) =>
+	const monthKey = Object.keys(monthToIndex).find((m) =>
 		normalized.includes(m)
 	);
 	const yearMatch = /20\d{2}/.exec(title);
 	return {
-		monthIndex: monthKey ? ptMonthToIndex[monthKey] : null,
+		monthIndex: monthKey ? monthToIndex[monthKey] : null,
 		year: yearMatch ? parseInt(yearMatch[0], 10) : null,
 	};
 }
@@ -75,12 +92,41 @@ export async function findTigerghostThreads(): Promise<
 			?.querySelectorAll('[data-thread-id] a[href]') ?? []
 	);
 	const threads = anchors
-		.filter((a) => /tigerghost/i.test(a.textContent || ''))
+		.filter(
+			(a) =>
+				/tigerghost/i.test(a.textContent || '') &&
+				Object.keys(monthToIndex).some((m) => a.href?.includes(m))
+		)
 		.map((a) => ({
 			title: (a.textContent || '').trim(),
 			href: new URL(a.href, FORUM_URL).toString(),
 		}));
-	console.log(`Found ${threads.length} threads.`);
+	console.log(`Found ${threads.length} threads (PT).`);
+	return threads;
+}
+
+export async function findTigerghostThreadsUK(): Promise<
+	Array<{ title: string; href: string }>
+> {
+	const html = await fetchHtml(UK_FORUM_URL);
+	const dom = new JSDOM(html);
+	const doc = dom.window.document;
+	const anchors: Array<HTMLAnchorElement> = Array.from(
+		doc
+			.getElementById('content')
+			?.querySelectorAll('[data-thread-id] a[href]') ?? []
+	);
+	const threads = anchors
+		.filter(
+			(a) =>
+				/events/i.test(a.textContent || '') &&
+				Object.keys(monthToIndex).some((m) => a.href?.includes(m))
+		)
+		.map((a) => ({
+			title: (a.textContent || '').trim(),
+			href: new URL(a.href, UK_FORUM_URL).toString(),
+		}));
+	console.log(`Found ${threads.length} threads (UK).`);
 	return threads;
 }
 
@@ -140,18 +186,17 @@ function parseMonthlyTable(document: Document): Array<DailyEvents> {
 	return [];
 }
 
-export function portugalNow(): Date {
-	return new Date(
-		new Date().toLocaleString('en-US', { timeZone: 'Europe/Lisbon' })
-	);
-}
-
 export async function parseThreadToSchedule(
 	title: string,
-	href: string
+	href: string,
+	ukHref?: string
 ): Promise<MonthlySchedule | null> {
 	const start = performance.now();
-	const html = await fetchHtml(href);
+	const promises = [fetchHtml(href)];
+	if (ukHref) {
+		promises.push(fetchHtml(ukHref));
+	}
+	const [html, ukHtml] = await Promise.all(promises);
 	console.log(`Took ${performance.now() - start} ms to fetch ${href}.`);
 	const dom = new JSDOM(html);
 	const doc = dom.window.document;
@@ -159,6 +204,68 @@ export async function parseThreadToSchedule(
 	const days = parseMonthlyTable(doc);
 	if (monthIndex == null || year == null || days.length === 0) return null;
 	const serverLabel = /\[(.*?)\]/.exec(title)?.[1] ?? 'Tigerghost';
+
+	if (ukHtml) {
+		const ukDom = new JSDOM(ukHtml);
+		const ukDoc = ukDom.window.document;
+
+		const groups = [
+			...ukDoc.querySelectorAll('#content .messageBody > .messageText'),
+		].flatMap((msg) => {
+			const ps = msg.querySelectorAll('p');
+			return ps.length > 0 &&
+				ps[0].textContent?.toLocaleLowerCase().includes('tigerghost')
+				? [...ps]
+				: [];
+		});
+
+		let collecting = false;
+		const result: Array<HTMLParagraphElement> = [];
+
+		for (const p of groups) {
+			if (!collecting) {
+				if (p.textContent?.trim() === 'Additional events:') {
+					collecting = true;
+				}
+			} else {
+				if (p.textContent?.trim() === '') break; // stop at first empty <p>
+				result.push(p);
+			}
+		}
+
+		result.forEach((r) => {
+			const text = r.textContent;
+			if (!text) return;
+
+			// Regex: capture the month name, then capture the whole days block (with + days)
+			const match = /^[A-Za-z]+\s+\d+(?:\s*,\s*\+\s*\d+)*/.exec(text);
+			if (!match) return;
+
+			const dayPart = match[0]; // e.g. "August 28, + 29, + 30, + 31"
+			let event = text.slice(dayPart.length).replace(/^,/, '').trim();
+
+			event = convertCestToLisbon(event);
+
+			// Extract all numbers from the day part
+			const dayNumbers = [...dayPart.matchAll(/\d+/g)].map((m) =>
+				parseInt(m[0], 10)
+			);
+
+			dayNumbers.forEach((d) => {
+				// verifica se o dia já existe no array
+				let dayObj = days.find((x) => x.day === d);
+
+				if (!dayObj) {
+					// se não existir, cria um novo
+					dayObj = { day: d };
+					days.push(dayObj);
+				}
+
+				dayObj.extra = event;
+			});
+		});
+	}
+
 	return {
 		serverLabel,
 		month: monthIndex,
@@ -195,6 +302,9 @@ export function formatScheduleForDiscord(
 		);
 		lines.push(`• **Evento 1**: ${day.event1 ?? '-'}`);
 		lines.push(`• **Evento 2**: ${day.event2 ?? '-'}`);
+		if (day.extra) {
+			lines.push(`• **Adicional**: ${day.extra ?? '-'}`);
+		}
 	} else if (period === 'week') {
 		const start = new Date(now);
 		const dayOfWeek = start.getDay(); // 0 = Domingo
@@ -214,6 +324,9 @@ export function formatScheduleForDiscord(
 			if (dayEntry) {
 				lines.push(`• **Evento 1**: ${dayEntry.event1 ?? '-'}`);
 				lines.push(`• **Evento 2**: ${dayEntry.event2 ?? '-'}`);
+				if (dayEntry.extra) {
+					lines.push(`• **Adicional**: ${dayEntry.extra ?? '-'}`);
+				}
 			} else {
 				lines.push('• Nenhum evento.');
 			}
@@ -231,6 +344,9 @@ export function formatScheduleForDiscord(
 			);
 			lines.push(`• **Evento 1**: ${d.event1 ?? '-'}`);
 			lines.push(`• **Evento 2**: ${d.event2 ?? '-'}`);
+			if (d.extra) {
+				lines.push(`• **Adicional**: ${d.extra ?? '-'}`);
+			}
 		}
 	}
 
@@ -240,7 +356,10 @@ export function formatScheduleForDiscord(
 export async function getSchedule(
 	pediod = 'month'
 ): Promise<MonthlySchedule | null> {
-	const threads = await findTigerghostThreads();
+	const [threads, UKThreads] = await Promise.all([
+		findTigerghostThreads(),
+		findTigerghostThreadsUK(),
+	]);
 	const now = portugalNow();
 	const currentMonth = now.getMonth();
 	const currentYear = now.getFullYear();
@@ -260,5 +379,20 @@ export async function getSchedule(
 		return null;
 	}
 
-	return parseThreadToSchedule(parsedThread.title, parsedThread.href);
+	const { monthIndex, year } = extractMonthYearFromTitle(parsedThread.title);
+
+	const ukThread = UKThreads.find((t) => {
+		const ukData = extractMonthYearFromTitle(t.title);
+		return ukData.monthIndex === monthIndex && ukData.year === year;
+	});
+
+	if (!ukThread) {
+		console.warn(`Couldn't find UK Thread for ${parsedThread.href}`);
+	}
+
+	return parseThreadToSchedule(
+		parsedThread.title,
+		parsedThread.href,
+		ukThread?.href
+	);
 }

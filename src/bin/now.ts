@@ -1,6 +1,6 @@
 import { config, validateConfig } from '../config';
-import { getSchedule, portugalNow } from '../scraper';
-import { sendDiscordWebhook } from '../utils';
+import { getSchedule } from '../scraper';
+import { portugalNow, sendDiscordWebhook } from '../utils';
 
 async function sendDailyReminder(webhookUrl: string): Promise<void> {
 	try {

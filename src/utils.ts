@@ -39,3 +39,32 @@ export async function sendDiscordWebhook(
 		throw error;
 	}
 }
+
+export function convertCestToLisbon(event: string): string {
+	return event.replace(
+		/\b(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})\s*CEST\b/,
+		(_, h1: string, m1: string, h2: string, m2: string) => {
+			// parse as números
+			let start = parseInt(h1, 10);
+			let end = parseInt(h2, 10);
+			const startMin = m1;
+			const endMin = m2;
+
+			// subtrai 1 hora
+			start = (start - 1 + 24) % 24;
+			end = (end - 1 + 24) % 24;
+
+			// formata de volta (com zero padding)
+			const fmt = (h: number, m: string) =>
+				h.toString().padStart(2, '0') + ':' + m;
+
+			return `${fmt(start, startMin)} - ${fmt(end, endMin)}`;
+		}
+	);
+}
+
+export function portugalNow(): Date {
+	return new Date(
+		new Date().toLocaleString('en-US', { timeZone: 'Europe/Lisbon' })
+	);
+}
