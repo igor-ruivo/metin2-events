@@ -64,7 +64,10 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 					];
 				}
 
-				await sendDiscordWebhook(webhookUrl, { embeds });
+				await sendDiscordWebhook(webhookUrl, {
+					content: '<@&1410116889740316684>',
+					embeds,
+				});
 			}
 		}
 

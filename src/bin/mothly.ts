@@ -12,18 +12,21 @@ async function main(): Promise<void> {
 		process.exit(1);
 	}
 
-	const period = 'week';
+	const period = 'month';
 
 	const schedule = await getSchedule(period);
 
 	if (!schedule) {
-		console.error('Não há eventos esta semana.');
+		console.error('Não há eventos este mês.');
 		process.exit(1);
 	}
 
 	const embeds = getEmbeds(period, schedule);
 
-	await sendDiscordWebhook(webhookUrl, { embeds });
+	await sendDiscordWebhook(webhookUrl, {
+		content: '<@&1410116889740316684>',
+		embeds,
+	});
 
 	console.log('✅ Reminder processing completed');
 }
