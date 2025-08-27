@@ -2,7 +2,7 @@ import { verifyKey } from 'discord-interactions';
 
 import type { MonthlySchedule } from '../src/scraper';
 import { formatScheduleForDiscord, getSchedule } from '../src/scraper';
-import { hasPeriodFile, portugalNow, readPeriodFile } from '../src/utils';
+import { fetchPeriodFile, portugalNow } from '../src/utils';
 
 interface DiscordInteraction {
 	type: number;
@@ -95,20 +95,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
 	// SLASH COMMAND
 	if (interaction.type === 2) {
+		const start = performance.now();
 		if (interaction.data?.name === 'events') {
 			const periodOption = interaction.data.options?.find(
 				(o) => o.name === 'period'
 			);
 			const period = periodOption?.value ?? 'week';
 
-			const hasCache = await hasPeriodFile(period);
+			const computed = await fetchPeriodFile<Embeds>(period);
 
-			if (hasCache) {
-				const today = await readPeriodFile<Embeds>(period);
+			if (computed) {
+				console.log(
+					`Previously computed. Took ${performance.now() - start} ms.`
+				);
 				return res.json({
 					type: 4,
 					data: {
-						embeds: today,
+						embeds: computed,
 					},
 				});
 			}
@@ -116,6 +119,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 			const schedule = await getSchedule(period);
 
 			if (!schedule) {
+				console.log(`Not computed. Took ${performance.now() - start} ms.`);
 				return res.json({
 					type: 4,
 					data: {
@@ -125,6 +129,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 				});
 			}
 
+			console.log(`Not computed. Took ${performance.now() - start} ms.`);
 			return res.json({
 				type: 4,
 				data: {
@@ -134,6 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 		}
 
 		if (interaction.data?.name === 'ping') {
+			console.log(`Ping took ${performance.now() - start} ms.`);
 			return res.json({
 				type: 4,
 				data: {

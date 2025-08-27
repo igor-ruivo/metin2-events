@@ -1,5 +1,3 @@
-import { access, constants, readFile } from 'fs/promises';
-
 export interface DiscordWebhookPayload {
 	content?: string;
 	embeds?: Array<{
@@ -71,20 +69,25 @@ export function portugalNow(): Date {
 	);
 }
 
-export async function hasPeriodFile(period: string): Promise<boolean> {
-	const filePath = `./data/${period}.json`;
+export async function fetchPeriodFile<T = unknown>(
+	period: string
+): Promise<T | null> {
+	const url = `https://raw.githubusercontent.com/igor-ruivo/metin2-events/refs/heads/main/data/${period}.json`;
+
+	const res = await fetch(url);
+
+	if (!res.ok) {
+		console.warn(
+			`⚠️ File for ${period} not found at ${url} (status ${res.status})`
+		);
+		return null;
+	}
 
 	try {
-		await access(filePath, constants.F_OK);
-		return true;
-	} catch {
-		return false;
+		const data = (await res.json()) as T;
+		return data;
+	} catch (err) {
+		console.error(`❌ Failed to parse JSON for ${period}:`, err);
+		return null;
 	}
-}
-
-export async function readPeriodFile<T = unknown>(period: string): Promise<T> {
-	const filePath = `./data/${period}.json`;
-
-	const content = await readFile(filePath, 'utf-8');
-	return JSON.parse(content) as T;
 }
