@@ -1,4 +1,4 @@
-interface DiscordWebhookPayload {
+export interface DiscordWebhookPayload {
 	content?: string;
 	embeds?: Array<{
 		title?: string;

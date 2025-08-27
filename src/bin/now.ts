@@ -1,5 +1,6 @@
 import { config, validateConfig } from '../config';
 import { getSchedule } from '../scraper';
+import type { DiscordWebhookPayload } from '../utils';
 import { portugalNow, sendDiscordWebhook } from '../utils';
 
 async function sendDailyReminder(webhookUrl: string): Promise<void> {
@@ -44,14 +45,26 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 				const timeRemainingMs = targetDate.getTime() - now.getTime();
 				const minutes = Math.floor(timeRemainingMs / 60000);
 
-				const embed = {
-					title: '⏰ Evento do Dia',
-					description: `**${label} (${name}) começa dentro de ${minutes} minutos**`,
-					color: 0xffa500,
-					timestamp: new Date().toISOString(),
-				};
+				const embeds: DiscordWebhookPayload['embeds'] = [
+					{
+						title: '⏰ Evento do Dia',
+						description: `**${label} (${name}) começa dentro de ${minutes} minutos**`,
+						color: 0xffa500,
+						timestamp: new Date().toISOString(),
+					},
+				];
 
-				await sendDiscordWebhook(webhookUrl, { embeds: [embed] });
+				if (todayEvents.extra) {
+					embeds[0].fields = [
+						{
+							name: 'Evento Adicional',
+							value: `Também não te esqueças do evento adicional de hoje: ${todayEvents.extra}!`,
+							inline: false,
+						},
+					];
+				}
+
+				await sendDiscordWebhook(webhookUrl, { embeds });
 			}
 		}
 
