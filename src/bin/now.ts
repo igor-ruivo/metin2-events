@@ -28,16 +28,16 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 				label: 'Evento 1',
 				name: todayEvents.event1,
 			},
-			/*{
+			{
 				triggerHour: 18,
 				eventHour: 19,
 				label: 'Evento 2',
 				name: todayEvents.event2,
-			},*/
+			},
 		];
 
 		for (const { triggerHour, eventHour, label, name } of events) {
-			if (true || currentHour === triggerHour) {
+			if (currentHour === triggerHour) {
 				const targetDate = new Date(now);
 				targetDate.setHours(eventHour, 0, 0, 0);
 
