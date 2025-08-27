@@ -2,13 +2,9 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
-// Simple configuration without dotenv
 export const config = {
-	// Local testing webhook (read from environment)
-	webhookUrl: process.env.DISCORD_WEBHOOK_URL ?? '',
-
-	// Timezone
-	timezone: process.env.TZ ?? 'Europe/Lisbon',
+	webhookUrl: process.env.DISCORD_WEBHOOK_URL,
+	timezone: 'Europe/Lisbon',
 };
 
 export function validateConfig(): void {
