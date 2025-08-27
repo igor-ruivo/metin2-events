@@ -18,7 +18,7 @@ jobs:
         run: |
           HOUR=$(TZ="Europe/Lisbon" date +'%H')
           echo "It's $(TZ="Europe/Lisbon" date) in Lisbon."
-          if [ "$HOUR" = "13" ]; then
+          if [ "$HOUR" = "0" ]; then
             echo "run_job=true" >> $GITHUB_ENV
           else
             echo "run_job=false" >> $GITHUB_ENV
