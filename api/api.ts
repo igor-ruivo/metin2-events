@@ -2,6 +2,7 @@ import { verifyKey } from 'discord-interactions';
 
 import type { MonthlySchedule } from '../src/scraper';
 import { formatScheduleForDiscord, getSchedule } from '../src/scraper';
+import { hasPeriodFile, portugalNow, readPeriodFile } from '../src/utils';
 
 interface DiscordInteraction {
 	type: number;
@@ -11,17 +12,19 @@ interface DiscordInteraction {
 	};
 }
 
+type Embeds = Array<{
+	title?: string;
+	description?: string;
+	color?: number;
+	timestamp?: string;
+	footer?: { text: string };
+}>;
+
 interface DiscordResponse {
 	type: number;
 	data?: {
 		content?: string;
-		embeds?: Array<{
-			title?: string;
-			description?: string;
-			color?: number;
-			timestamp?: string;
-			footer?: { text: string };
-		}>;
+		embeds?: Embeds;
 		flags?: number;
 	};
 }
@@ -98,6 +101,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 			);
 			const period = periodOption?.value ?? 'week';
 
+			const hasCache = await hasPeriodFile(period);
+
+			if (hasCache) {
+				const today = await readPeriodFile<Embeds>(period);
+				return res.json({
+					type: 4,
+					data: {
+						embeds: today,
+					},
+				});
+			}
+
 			const schedule = await getSchedule(period);
 
 			if (!schedule) {
@@ -153,14 +168,24 @@ const periodToTitle = (period: string) => {
 };
 
 export const getEmbeds = (period: string, schedule: MonthlySchedule) => {
+	const now = portugalNow();
+	const formatted = now.toLocaleString('pt-PT', {
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit',
+		hour12: false,
+	});
+
 	return [
 		{
 			title: `📅 Eventos Metin2 Tigerghost - ${periodToTitle(period)}`,
 			description: formatScheduleForDiscord(schedule, period),
 			color: 0x00ff00,
-			timestamp: new Date().toISOString(),
 			footer: {
-				text: 'Evento 1 (15:00-19:00), Evento 2 (19:00-23:00)\nOs eventos estão sempre atualizados!',
+				text: `Evento 1 (15:00-19:00), Evento 2 (19:00-23:00)\nAtualizado a ${formatted}`,
 			},
 		},
 	];

@@ -2,7 +2,7 @@ name: Metin2 Monthly Event Reminder
 
 on:
   schedule:
-    - cron: '0 0 1 * *' # run every 1st day
+    - cron: '30 0 1 * *' # run every 1st day
   workflow_dispatch: # Allow manual trigger
 
 jobs:

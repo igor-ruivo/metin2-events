@@ -1,3 +1,5 @@
+import { access, constants, readFile } from 'fs/promises';
+
 export interface DiscordWebhookPayload {
 	content?: string;
 	embeds?: Array<{
@@ -67,4 +69,22 @@ export function portugalNow(): Date {
 	return new Date(
 		new Date().toLocaleString('en-US', { timeZone: 'Europe/Lisbon' })
 	);
+}
+
+export async function hasPeriodFile(period: string): Promise<boolean> {
+	const filePath = `./data/${period}.json`;
+
+	try {
+		await access(filePath, constants.F_OK);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+export async function readPeriodFile<T = unknown>(period: string): Promise<T> {
+	const filePath = `./data/${period}.json`;
+
+	const content = await readFile(filePath, 'utf-8');
+	return JSON.parse(content) as T;
 }
