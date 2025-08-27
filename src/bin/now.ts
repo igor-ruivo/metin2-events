@@ -49,8 +49,7 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 					{
 						title: '📅 Contagem Decrescente!',
 						description: `**${label}**: ${name}\n⏰ Começa dentro de ${minutes} minutos`,
-						color: 0xffa500,
-						timestamp: new Date().toISOString(),
+						color: 0xffa500
 					},
 				];
 
