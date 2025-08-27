@@ -52,6 +52,7 @@ jobs:
         id: generate-data
 
       - name: Commit and push data files
+        if: env.run_job == 'true'
         run: |
           git config --local user.email "igor.ruivo.97@gmail.com"
           git config --local user.name "Igor Ruivo"
@@ -67,7 +68,7 @@ jobs:
           fi
 
       - name: Send Discord notification on failure
-        if: failure() && steps.generate-data.outcome == 'failure'
+        if: env.run_job == 'true' && failure() && steps.generate-data.outcome == 'failure'
         run: |
           echo "Sending Discord notification for generate-data failure"
 
