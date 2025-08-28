@@ -314,7 +314,7 @@ export function formatScheduleForDiscord(
 		const day = schedule.days.find((d) => d.day === now.getDate());
 		if (!day) return '❌ Não há eventos hoje.';
 		lines.push(
-			`**Hoje, ${String(day.day).padStart(2, '0')}/${schedule.month + 1}**\n`
+			`\n**Hoje, ${String(day.day).padStart(2, '0')}/${schedule.month + 1}**`
 		);
 		lines.push(`• **Evento 1**: ${day.event1 ?? '-'}`);
 		lines.push(`• **Evento 2**: ${day.event2 ?? '-'}`);

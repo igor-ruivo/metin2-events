@@ -48,8 +48,11 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 				const embeds: DiscordWebhookPayload['embeds'] = [
 					{
 						title: '📅 Contagem Decrescente!',
-						description: `**${label}**: ${name}\n⏰ Começa dentro de ${minutes} minutos`,
+						description: `**${label}**: ${name}`,
 						color: 0xffa500,
+						footer: {
+							text: `⏰ Começa dentro de ${minutes} minutos`,
+						}
 					},
 				];
 
