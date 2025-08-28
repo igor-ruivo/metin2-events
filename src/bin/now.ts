@@ -52,7 +52,7 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 						color: 0xffa500,
 						footer: {
 							text: `⏰ Começa dentro de ${minutes} minutos`,
-						}
+						},
 					},
 				];
 

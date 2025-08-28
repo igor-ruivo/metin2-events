@@ -1,0 +1,49 @@
+name: Metin2 Daily Event Reminder
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Refresh cached data
+        run: pnpm run refresh
+        id: generate-data
+
+      - name: Commit and push data files
+        run: |
+          git config --local user.email "igor.ruivo.97@gmail.com"
+          git config --local user.name "Igor Ruivo"
+          git add data/*.json || true
+
+          # Check if there are staged changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            # Commit and push changes
+            git commit -m "Refresh Tigerghost Metin2 Events - $(date)"
+            git push
+          fi
