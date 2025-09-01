@@ -74,7 +74,7 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 					triggerHour: 22,
 					eventHour: 23,
 					label: 'Adicional',
-					name: todayEvents.extra,
+					name: extraEventsFromDayAfter.extra,
 				});
 			}
 		}
