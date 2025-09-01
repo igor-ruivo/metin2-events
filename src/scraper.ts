@@ -292,10 +292,18 @@ export async function parseThreadToSchedule(
 	};
 }
 
+const hasTime = (desc: string) =>
+	/\b\d{1,2}:\d{2}\s*-\s*\d{1,2}:\d{2}\b/.test(desc);
+
 export function formatScheduleForDiscord(
 	schedule: MonthlySchedule,
 	period: string
-): string {
+): {
+	description: string;
+	hasAdditionalWithNoTime: boolean;
+} {
+	let hasAdditionalWithNoTime = false;
+
 	const now = portugalNow();
 	const weekdays = [
 		'Domingo',
@@ -312,14 +320,24 @@ export function formatScheduleForDiscord(
 
 	if (period === 'today') {
 		const day = schedule.days.find((d) => d.day === now.getDate());
-		if (!day) return '❌ Não há eventos hoje.';
+		if (!day) {
+			return {
+				description: '❌ Não há eventos hoje.',
+				hasAdditionalWithNoTime,
+			};
+		}
 		lines.push(
 			`\n**Hoje, ${String(day.day).padStart(2, '0')}/${schedule.month + 1}**`
 		);
 		lines.push(`• **Evento 1**: ${day.event1 ?? '-'}`);
 		lines.push(`• **Evento 2**: ${day.event2 ?? '-'}`);
 		if (day.extra) {
-			lines.push(`• **Adicional**: ${day.extra ?? '-'}`);
+			if (!hasTime(day.extra)) {
+				hasAdditionalWithNoTime = true;
+				lines.push(`• **Adicional**: ${day.extra}*`);
+			} else {
+				lines.push(`• **Adicional**: ${day.extra}`);
+			}
 		}
 	} else if (period === 'week') {
 		const start = new Date(now);
@@ -330,6 +348,9 @@ export function formatScheduleForDiscord(
 			d.setDate(start.getDate() + i);
 			const dayNumber = d.getDate();
 			const dayEntry = schedule.days.find((s) => s.day === dayNumber);
+			if (!dayEntry) {
+				continue;
+			}
 			const todayMark =
 				now.getDate() === dayNumber && now.getMonth() === schedule.month
 					? ' 🎯'
@@ -337,14 +358,15 @@ export function formatScheduleForDiscord(
 			lines.push(
 				`\n**${weekdays[d.getDay()]}, ${String(dayNumber).padStart(2, '0')}/${d.getMonth() + 1}${todayMark}**`
 			);
-			if (dayEntry) {
-				lines.push(`• **Evento 1**: ${dayEntry.event1 ?? '-'}`);
-				lines.push(`• **Evento 2**: ${dayEntry.event2 ?? '-'}`);
-				if (dayEntry.extra) {
-					lines.push(`• **Adicional**: ${dayEntry.extra ?? '-'}`);
+			lines.push(`• **Evento 1**: ${dayEntry.event1 ?? '-'}`);
+			lines.push(`• **Evento 2**: ${dayEntry.event2 ?? '-'}`);
+			if (dayEntry.extra) {
+				if (!hasTime(dayEntry.extra)) {
+					hasAdditionalWithNoTime = true;
+					lines.push(`• **Adicional**: ${dayEntry.extra}*`);
+				} else {
+					lines.push(`• **Adicional**: ${dayEntry.extra}`);
 				}
-			} else {
-				lines.push('• Nenhum evento.');
 			}
 		}
 	} else {
@@ -361,12 +383,20 @@ export function formatScheduleForDiscord(
 			lines.push(`• **Evento 1**: ${d.event1 ?? '-'}`);
 			lines.push(`• **Evento 2**: ${d.event2 ?? '-'}`);
 			if (d.extra) {
-				lines.push(`• **Adicional**: ${d.extra ?? '-'}`);
+				if (!hasTime(d.extra)) {
+					hasAdditionalWithNoTime = true;
+					lines.push(`• **Adicional**: ${d.extra}*`);
+				} else {
+					lines.push(`• **Adicional**: ${d.extra}`);
+				}
 			}
 		}
 	}
 
-	return lines.join('\n');
+	return {
+		description: lines.join('\n'),
+		hasAdditionalWithNoTime,
+	};
 }
 
 export async function getSchedule(

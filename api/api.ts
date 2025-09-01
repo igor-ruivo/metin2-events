@@ -198,13 +198,15 @@ export const getEmbeds = (
 		hour12: false,
 	});
 
+	const fetched = formatScheduleForDiscord(schedule, period);
+
 	return [
 		{
 			title: `📅 Eventos Metin2 Tigerghost - ${periodToTitle(period)}`,
-			description: formatScheduleForDiscord(schedule, period),
+			description: fetched.description,
 			color: 0x00ff00,
 			footer: {
-				text: `Evento 1 (15:00-19:00), Evento 2 (19:00-23:00)\nEventos adicionais sem indicação de hora decorrem todo o dia, das 23h do dia anterior às 23h do próprio dia\nAtualizado a ${formatted}\n(Todos os horários seguem a hora de Portugal continental)`,
+				text: `Evento 1 (15:00-19:00), Evento 2 (19:00-23:00)\nAtualizado a ${formatted}${fetched.hasAdditionalWithNoTime ? '\n\n\n* Durante todo o dia, das 23h do dia anterior às 23h do próprio dia' : ''}`,
 			},
 		},
 	];
