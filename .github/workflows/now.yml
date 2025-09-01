@@ -2,48 +2,32 @@ name: Metin2 Current Event Reminder
 
 on:
   schedule:
-    - cron: '30 13,14,17,18 * * *' # runs at 1, 2, 5 and 6pm UTC at minute 30
+    - cron: '30 13,14,17,18,19,20,21,22,23 * * *'
   workflow_dispatch: # Allow manual trigger
 
 jobs:
   lisbon-time-job:
     runs-on: ubuntu-latest
     steps:
-      - name: Check Lisbon time
-        id: timecheck
-        run: |
-          HOUR=$(TZ="Europe/Lisbon" date +'%H')
-          echo "It's $(TZ="Europe/Lisbon" date) in Lisbon."
-          if [ "$HOUR" = "14" ] || [ "$HOUR" = "18" ]; then
-            echo "run_job=true" >> $GITHUB_ENV
-          else
-            echo "run_job=false" >> $GITHUB_ENV
-          fi
-
       - name: Checkout repository
-        if: env.run_job == 'true'
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
-        if: env.run_job == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
       - name: Install pnpm
-        if: env.run_job == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: latest
 
       - name: Install dependencies
-        if: env.run_job == 'true'
         run: pnpm install
 
       - name: Run reminder script
-        if: env.run_job == 'true'
         run: pnpm run now
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
