@@ -4,15 +4,15 @@ import type { DiscordWebhookPayload } from '../utils';
 import { portugalNow, sendDiscordWebhook } from '../utils';
 
 const extractExtraHour = (extra: string) => {
-	const match = extra.match(/\b(\d{1,2}):\d{2}\b/); 
-  if (!match) return null;
+	const match = /\b(\d{1,2}):\d{2}\b/.exec(extra);
+	if (!match) return null;
 
-  const hour = parseInt(match[1], 10);
-  if (hour >= 0 && hour <= 23) {
-    return hour;
-  }
-  return null;
-}
+	const hour = parseInt(match[1], 10);
+	if (hour >= 0 && hour <= 23) {
+		return hour;
+	}
+	return null;
+};
 
 async function sendDailyReminder(webhookUrl: string): Promise<void> {
 	try {
@@ -25,7 +25,9 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 		const now = portugalNow();
 		const today = now.getDate();
 		const todayEvents = schedule.days.find((d) => d.day === today);
-		const extraEventsFromDayAfter = schedule.days.find((d) => d.day === (today + 1)); // it's ok if day is invalid (next month). We don't usually have early month events starting too early
+		const extraEventsFromDayAfter = schedule.days.find(
+			(d) => d.day === today + 1
+		); // it's ok if day is invalid (next month). We don't usually have early month events starting too early
 
 		if (!todayEvents) {
 			console.log('⚠️ No events found for today');
@@ -52,13 +54,13 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 		// i'm assuming we won't have short events starting at late hours (after 11pm etc)
 		if (todayEvents.extra) {
 			const extraHour = extractExtraHour(todayEvents.extra); // does not include full day events
-			
+
 			if (extraHour) {
 				events.push({
 					triggerHour: extraHour - 1,
 					eventHour: extraHour,
 					label: 'Adicional',
-					name: todayEvents.extra
+					name: todayEvents.extra,
 				});
 			}
 		}
@@ -72,7 +74,7 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 					triggerHour: 22,
 					eventHour: 23,
 					label: 'Adicional',
-					name: todayEvents.extra
+					name: todayEvents.extra,
 				});
 			}
 		}
