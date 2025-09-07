@@ -59,7 +59,7 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 				events.push({
 					triggerHour: extraHour - 1,
 					eventHour: extraHour,
-					label: 'Adicional',
+					label: 'Evento Adicional',
 					name: todayEvents.extra,
 				});
 			}
@@ -73,7 +73,7 @@ async function sendDailyReminder(webhookUrl: string): Promise<void> {
 				events.push({
 					triggerHour: 22,
 					eventHour: 23,
-					label: 'Adicional',
+					label: 'Evento Adicional',
 					name: extraEventsFromDayAfter.extra,
 				});
 			}

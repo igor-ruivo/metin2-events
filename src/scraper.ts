@@ -341,8 +341,9 @@ export function formatScheduleForDiscord(
 		}
 	} else if (period === 'week') {
 		const start = new Date(now);
-		const dayOfWeek = start.getDay(); // 0 = Domingo
-		start.setDate(now.getDate() - dayOfWeek + 1); // ajusta para segunda-feira
+		// make Monday = 0, Sunday = 6
+		const dayOfWeek = (start.getDay() + 6) % 7;
+		start.setDate(start.getDate() - dayOfWeek);
 		for (let i = 0; i < 7; i++) {
 			const d = new Date(start);
 			d.setDate(start.getDate() + i);
