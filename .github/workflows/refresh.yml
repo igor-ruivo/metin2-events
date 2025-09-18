@@ -1,6 +1,8 @@
-name: Metin2 Events Manual Refresh
+name: Metin2 Events Auto Refresh
 
 on:
+  schedule:
+    - cron: '0 23,0 * * *'
   workflow_dispatch:
 
 permissions:
@@ -11,29 +13,46 @@ jobs:
   send-reminders:
     runs-on: ubuntu-latest
     steps:
+      - name: Check Lisbon time
+        id: timecheck
+        run: |
+          HOUR=$(TZ="Europe/Lisbon" date +'%H')
+          echo "It's $(TZ="Europe/Lisbon" date) in Lisbon."
+          if [ "$HOUR" = "00" ]; then
+            echo "run_job=true" >> $GITHUB_ENV
+          else
+            echo "run_job=false" >> $GITHUB_ENV
+          fi
+          
       - name: Checkout repository
+        if: env.run_job == 'true'
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
+        if: env.run_job == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
       - name: Install pnpm
+        if: env.run_job == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: latest
 
       - name: Install dependencies
+        if: env.run_job == 'true'
         run: pnpm install
 
       - name: Refresh cached data
+        if: env.run_job == 'true'
         run: pnpm run refresh
         id: generate-data
 
       - name: Commit and push data files
+        if: env.run_job == 'true'
         run: |
           git config --local user.email "igor.ruivo.97@gmail.com"
           git config --local user.name "Igor Ruivo"
