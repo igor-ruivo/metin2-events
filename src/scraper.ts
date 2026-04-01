@@ -269,7 +269,7 @@ export async function parseThreadToSchedule(
 					dayObj = { day: d };
 					days.push(dayObj);
 				}
-
+				
 				dayObj.extra = event
 					.replaceAll('Harvest Festival', 'Caça os Saqueadores')
 					.replaceAll('Easter Mining event', 'Spawn de Veios da Páscoa')
