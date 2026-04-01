@@ -347,13 +347,23 @@ export function formatScheduleForDiscord(
 		for (let i = 0; i < 7; i++) {
 			const d = new Date(start);
 			d.setDate(start.getDate() + i);
+			// Only use days inside the schedule's month. Matching by day-of-month alone
+			// would pair Mon 30/3 with April 30th events, and hide Tue 31/3 (no day 31 in April).
+			if (
+				d.getMonth() !== schedule.month ||
+				d.getFullYear() !== schedule.year
+			) {
+				continue;
+			}
 			const dayNumber = d.getDate();
 			const dayEntry = schedule.days.find((s) => s.day === dayNumber);
 			if (!dayEntry) {
 				continue;
 			}
 			const todayMark =
-				now.getDate() === dayNumber && now.getMonth() === schedule.month
+				now.getDate() === dayNumber &&
+				now.getMonth() === schedule.month &&
+				now.getFullYear() === schedule.year
 					? ' 🎯'
 					: '';
 			lines.push(
