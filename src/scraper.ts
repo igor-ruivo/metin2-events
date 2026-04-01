@@ -212,11 +212,13 @@ export async function parseThreadToSchedule(
 		const groups = [
 			...ukDoc.querySelectorAll('#content .messageBody > .messageText'),
 		].flatMap((msg) => {
+			// Tigerghost used to be in the first <p>; now it is often an <h1>, with a blank <p> first.
+			const body = msg.textContent?.toLowerCase() ?? '';
+			if (!body.includes('tigerghost')) {
+				return [];
+			}
 			const ps = msg.querySelectorAll('p');
-			return ps.length > 0 &&
-				ps[0].textContent?.toLocaleLowerCase().includes('tigerghost')
-				? [...ps]
-				: [];
+			return ps.length > 0 ? [...ps] : [];
 		});
 
 		let collecting = false;
@@ -224,7 +226,11 @@ export async function parseThreadToSchedule(
 
 		for (const p of groups) {
 			if (!collecting) {
-				if (p.textContent?.trim() === 'Additional events:') {
+				const header = (p.textContent ?? '')
+					.replace(/\s+/g, ' ')
+					.trim()
+					.toLowerCase();
+				if (header === 'additional events:' || header === 'additional events') {
 					collecting = true;
 				}
 			} else {
@@ -237,8 +243,11 @@ export async function parseThreadToSchedule(
 			const text = r.textContent;
 			if (!text) return;
 
-			// Regex: capture the month name, then capture the whole days block (with + days)
-			const match = /^[A-Za-z]+\s+\d+(?:\s*,\s*\+\s*\d+)*/.exec(text);
+			// Month + day(s): "August 28, + 29" or "April 25 + 26"
+			const match =
+				/^[A-Za-z]+\s+\d+(?:(?:\s*,\s*\+\s*\d+)|(?:\s+\+\s*\d+))*/.exec(
+					text
+				);
 			if (!match) return;
 
 			const dayPart = match[0]; // e.g. "August 28, + 29, + 30, + 31"
@@ -263,10 +272,12 @@ export async function parseThreadToSchedule(
 
 				dayObj.extra = event
 					.replaceAll('Harvest Festival', 'Caça os Saqueadores')
+					.replaceAll('Easter Mining event', 'Spawn de Veios da Páscoa')
 					.replaceAll('Mining event', 'Spawn de Veios')
 					.replaceAll('(Map: ', '(')
 					.replaceAll('Deserto', 'Desert')
 					.replaceAll('Desert', 'Deserto')
+					.replaceAll('Orc Valley', 'Vale de Seungryong')
 					.replaceAll(' and ', ' e ')
 					.replaceAll(' and ', ' e ')
 					.replaceAll('Catch carp', 'Captura de Carpas')
