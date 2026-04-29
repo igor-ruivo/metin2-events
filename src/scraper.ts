@@ -245,9 +245,7 @@ export async function parseThreadToSchedule(
 
 			// Month + day(s): "August 28, + 29" or "April 25 + 26"
 			const match =
-				/^[A-Za-z]+\s+\d+(?:(?:\s*,\s*\+\s*\d+)|(?:\s+\+\s*\d+))*/.exec(
-					text
-				);
+				/^[A-Za-z]+\s+\d+(?:(?:\s*,\s*\+\s*\d+)|(?:\s+\+\s*\d+))*/.exec(text);
 			if (!match) return;
 
 			const dayPart = match[0]; // e.g. "August 28, + 29, + 30, + 31"
@@ -269,7 +267,7 @@ export async function parseThreadToSchedule(
 					dayObj = { day: d };
 					days.push(dayObj);
 				}
-				
+
 				dayObj.extra = event
 					.replaceAll('Harvest Festival', 'Caça os Saqueadores')
 					.replaceAll('Easter Mining event', 'Spawn de Veios da Páscoa')
