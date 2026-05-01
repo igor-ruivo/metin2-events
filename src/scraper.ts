@@ -131,12 +131,14 @@ export async function findTigerghostThreadsUK(): Promise<
 }
 
 function parseMonthlyTable(document: Document): Array<DailyEvents> {
-	// Heuristic: find a table that looks like a calendar with day cells containing "Evento 1"/"Evento 2"
+	// Heuristic: find a table that looks like a calendar with day cells (PT or UK forum)
 	const tables = Array.from(document.querySelectorAll('table'));
 
 	for (const table of tables) {
 		const text = table.textContent?.toLowerCase() || '';
-		if (!/evento\s*1|evento\s*2/.test(text)) {
+		const looksPt = /evento\s*1|evento\s*2/.test(text);
+		const looksUk = /\bevent\s*1\b|\bevent\s*2\b/.test(text);
+		if (!looksPt && !looksUk) {
 			continue;
 		}
 
@@ -156,16 +158,22 @@ function parseMonthlyTable(document: Document): Array<DailyEvents> {
 			const event1Text = (event1Cell.textContent || '').trim();
 			const event2Text = (event2Cell.textContent || '').trim();
 
-			// Skip header row
+			// Skip header row (PT or EN)
+			const e1 = event1Text.toLowerCase();
 			if (
 				dayText.toLowerCase() === 'data' ||
-				event1Text.toLowerCase().includes('evento 1')
+				dayText.toLowerCase() === 'date' ||
+				e1.includes('evento 1') ||
+				e1.includes('event 1')
 			) {
 				continue;
 			}
 
-			// Extract day number from Portuguese date format like "sexta-feira, agosto 01, 2025"
-			const dayMatch = /\b(\d{1,2})\b/.exec(dayText);
+			// Day number: "agosto 01", "May 20", or glued "May20" (forum typo)
+			let dayMatch = /\b(\d{1,2})\b/.exec(dayText);
+			if (!dayMatch) {
+				dayMatch = /[A-Za-z](\d{1,2})\b/.exec(dayText);
+			}
 			if (!dayMatch) {
 				continue;
 			}
@@ -186,17 +194,60 @@ function parseMonthlyTable(document: Document): Array<DailyEvents> {
 	return [];
 }
 
+/** English → PT for UK forum wording (main grid + additional events). */
+function translateUkEventPhrases(text: string): string {
+	return text
+		.replaceAll('Harvest Festival', 'Caça os Saqueadores')
+		.replaceAll('Easter Mining event', 'Spawn de Veios da Páscoa')
+		.replaceAll('Mining event', 'Spawn de Veios')
+		.replaceAll('(Map: ', '(')
+		.replaceAll('Deserto', 'Desert')
+		.replaceAll('Desert', 'Deserto')
+		.replaceAll('Orc Valley', 'Vale de Seungryong')
+		.replaceAll(' and ', ' e ')
+		.replaceAll('Catch carp', 'Captura de Carpas')
+		.replaceAll(
+			'Mysterious Chest , can be received at an event at the Fisherman in exchange for a living Carp',
+			'poderás trocar Carpas vivas por Caixas Mistério no Pescador'
+		)
+		.replaceAll('Enchant Item B', 'Feitiço para Itens (A)')
+		.replaceAll('Reinfore Item B', 'Reforço para Itens (A)')
+		.replaceAll('Reinforce Item B', 'Reforço para Itens (A)')
+		.replaceAll('Flame of the Dragon B', 'Chama do Dragão (B)')
+		.replaceAll('Fishing Jigsaw', 'Puzzle de Pesca')
+		.replaceAll('Blessing Marble', 'Mármore da Benção')
+		.replaceAll('Teleportation Ring', 'Anel do Transporte')
+		.replaceAll('Crimson Ebony Box', "Caixa d'Ébano Púrpura")
+		.replaceAll('Green Dragon Bean', 'Feijão do Dragão Verde')
+		.replaceAll('Concentrated Reading', 'Conselho de Eremita')
+		.replaceAll('Exorcism Scroll', 'Pergaminho do Exorcismo')
+		.replaceAll('Blessing Scroll', 'Pergaminho da Bênção')
+		.replaceAll('Inventory Expansion', 'Expansão de Inventário')
+		.replaceAll('Moonlight (normal)', 'Evento de Luares (Normal)')
+		.replaceAll('Pet Book Chest', 'Cofre do Livro do Pet')
+		.replaceAll('Passage Ticket', 'Passagem')
+		.replaceAll('Small Orison', 'Orison Pequeno')
+		.replaceAll('Cor Draconis', 'Cor Draconis (Cru)')
+		.replaceAll('Superstone', 'Super Metins')
+		.replaceAll('Fine Cloth', 'Tecido Fino')
+		.replaceAll('Nugget (green)', 'Nugget (Verde)')
+		.replaceAll('Muffin', 'Muffin (Azul)')
+}
+
 export async function parseThreadToSchedule(
 	title: string,
 	href: string,
 	ukHref?: string
 ): Promise<MonthlySchedule | null> {
 	const start = performance.now();
-	const promises = [fetchHtml(href)];
-	if (ukHref) {
-		promises.push(fetchHtml(ukHref));
+	let html: string;
+	let ukHtml: string | undefined;
+	if (ukHref && ukHref !== href) {
+		[html, ukHtml] = await Promise.all([fetchHtml(href), fetchHtml(ukHref)]);
+	} else {
+		html = await fetchHtml(href);
+		ukHtml = ukHref ? html : undefined;
 	}
-	const [html, ukHtml] = await Promise.all(promises);
 	console.log(`Took ${performance.now() - start} ms to fetch ${href}.`);
 	const dom = new JSDOM(html);
 	const doc = dom.window.document;
@@ -204,6 +255,14 @@ export async function parseThreadToSchedule(
 	const days = parseMonthlyTable(doc);
 	if (monthIndex == null || year == null || days.length === 0) return null;
 	const serverLabel = /\[(.*?)\]/.exec(title)?.[1] ?? 'Tigerghost';
+
+	const primaryFromUk = href.includes('board.en.metin2');
+	if (primaryFromUk) {
+		for (const d of days) {
+			if (d.event1) d.event1 = translateUkEventPhrases(d.event1);
+			if (d.event2) d.event2 = translateUkEventPhrases(d.event2);
+		}
+	}
 
 	if (ukHtml) {
 		const ukDom = new JSDOM(ukHtml);
@@ -243,9 +302,9 @@ export async function parseThreadToSchedule(
 			const text = r.textContent;
 			if (!text) return;
 
-			// Month + day(s): "August 28, + 29" or "April 25 + 26"
+			// Month + day(s): "August 28, + 29", "April 25 + 26", or "May20" (no space before day)
 			const match =
-				/^[A-Za-z]+\s+\d+(?:(?:\s*,\s*\+\s*\d+)|(?:\s+\+\s*\d+))*/.exec(text);
+				/^[A-Za-z]+\s*\d+(?:(?:\s*,\s*\+\s*\d+)|(?:\s+\+\s*\d+))*/.exec(text);
 			if (!match) return;
 
 			const dayPart = match[0]; // e.g. "August 28, + 29, + 30, + 31"
@@ -268,21 +327,7 @@ export async function parseThreadToSchedule(
 					days.push(dayObj);
 				}
 
-				dayObj.extra = event
-					.replaceAll('Harvest Festival', 'Caça os Saqueadores')
-					.replaceAll('Easter Mining event', 'Spawn de Veios da Páscoa')
-					.replaceAll('Mining event', 'Spawn de Veios')
-					.replaceAll('(Map: ', '(')
-					.replaceAll('Deserto', 'Desert')
-					.replaceAll('Desert', 'Deserto')
-					.replaceAll('Orc Valley', 'Vale de Seungryong')
-					.replaceAll(' and ', ' e ')
-					.replaceAll(' and ', ' e ')
-					.replaceAll('Catch carp', 'Captura de Carpas')
-					.replaceAll(
-						'Mysterious Chest , can be received at an event at the Fisherman in exchange for a living Carp',
-						'poderás trocar Carpas vivas por Caixas Mistério no Pescador'
-					);
+				dayObj.extra = translateUkEventPhrases(event);
 
 				if (dayObj.extra.endsWith(' )')) {
 					dayObj.extra = dayObj.extra.replace(/ \)$/, ')');
@@ -325,7 +370,33 @@ export function formatScheduleForDiscord(
 	];
 	const lines: Array<string> = [];
 
-	lines.push(`**${schedule.threadTitle}**`);
+	// If UK-style "Events, May 2026", translate to PT (Eventos, Maio 2026)
+	let title = schedule.threadTitle;
+
+	// Check for "Events, <month> <year>" pattern at the start
+	const ukTitleMatch = /^Events,?\s+([A-Za-z]+)\s+(20\d{2})$/i.exec(title);
+	if (ukTitleMatch) {
+		const enMonth = ukTitleMatch[1].toLowerCase();
+		const year = ukTitleMatch[2];
+		// English month to PT mapping
+		const enToPtMonth: Record<string, string> = {
+			january: 'Janeiro',
+			february: 'Fevereiro',
+			march: 'Março',
+			april: 'Abril',
+			may: 'Maio',
+			june: 'Junho',
+			july: 'Julho',
+			august: 'Agosto',
+			september: 'Setembro',
+			october: 'Outubro',
+			november: 'Novembro',
+			december: 'Dezembro',
+		};
+		const ptMonth = enToPtMonth[enMonth] || ukTitleMatch[1];
+		title = `(UK:) Eventos, ${ptMonth} ${year}`;
+	}
+	lines.push(`**${title}**`);
 
 	if (period === 'today') {
 		const day = schedule.days.find((d) => d.day === now.getDate());
@@ -430,8 +501,9 @@ export async function getSchedule(
 	const currentMonth = now.getMonth();
 	const currentYear = now.getFullYear();
 
-	const parsedThread = threads.find((t) => {
+	const matchesPeriod = (t: { title: string }) => {
 		const { monthIndex, year } = extractMonthYearFromTitle(t.title);
+		if (monthIndex == null || year == null) return false;
 		if (pediod === 'next') {
 			if (currentMonth === 11) {
 				return monthIndex === 0 && year === currentYear + 1;
@@ -439,26 +511,41 @@ export async function getSchedule(
 			return monthIndex === currentMonth + 1 && year === currentYear;
 		}
 		return monthIndex === currentMonth && year === currentYear;
-	});
+	};
 
-	if (!parsedThread) {
+	const parsedThread = threads.find(matchesPeriod);
+
+	if (parsedThread) {
+		const { monthIndex, year } = extractMonthYearFromTitle(parsedThread.title);
+
+		const ukThread = UKThreads.find((t) => {
+			const ukData = extractMonthYearFromTitle(t.title);
+			return ukData.monthIndex === monthIndex && ukData.year === year;
+		});
+
+		if (!ukThread) {
+			console.warn(`Couldn't find UK Thread for ${parsedThread.href}`);
+		}
+
+		return parseThreadToSchedule(
+			parsedThread.title,
+			parsedThread.href,
+			ukThread?.href
+		);
+	}
+
+	const ukFallback = UKThreads.find(matchesPeriod);
+	if (!ukFallback) {
 		return null;
 	}
 
-	const { monthIndex, year } = extractMonthYearFromTitle(parsedThread.title);
-
-	const ukThread = UKThreads.find((t) => {
-		const ukData = extractMonthYearFromTitle(t.title);
-		return ukData.monthIndex === monthIndex && ukData.year === year;
-	});
-
-	if (!ukThread) {
-		console.warn(`Couldn't find UK Thread for ${parsedThread.href}`);
-	}
+	console.warn(
+		`No PT thread for ${pediod === 'next' ? 'next' : 'current'} month; using UK forum.`
+	);
 
 	return parseThreadToSchedule(
-		parsedThread.title,
-		parsedThread.href,
-		ukThread?.href
+		ukFallback.title,
+		ukFallback.href,
+		ukFallback.href
 	);
 }

@@ -7,6 +7,7 @@
 		"weekly": "tsx src/bin/weekly.ts",
 		"daily": "tsx src/bin/daily.ts",
 		"monthly": "tsx src/bin/monthly.ts",
+		"next": "tsx src/bin/next.ts",
 		"register": "tsx src/bin/register.ts",
 		"refresh": "tsx src/bin/refresh.ts",
 		"update": "tsx src/bin/update.ts",
