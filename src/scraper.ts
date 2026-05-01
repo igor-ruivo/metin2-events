@@ -171,9 +171,7 @@ function parseMonthlyTable(document: Document): Array<DailyEvents> {
 
 			// Day number: "agosto 01", "May 20", or glued "May20" (forum typo)
 			let dayMatch = /\b(\d{1,2})\b/.exec(dayText);
-			if (!dayMatch) {
-				dayMatch = /[A-Za-z](\d{1,2})\b/.exec(dayText);
-			}
+			dayMatch ??= /[A-Za-z](\d{1,2})\b/.exec(dayText);
 			if (!dayMatch) {
 				continue;
 			}
@@ -231,7 +229,7 @@ function translateUkEventPhrases(text: string): string {
 		.replaceAll('Superstone', 'Super Metins')
 		.replaceAll('Fine Cloth', 'Tecido Fino')
 		.replaceAll('Nugget (green)', 'Nugget (Verde)')
-		.replaceAll('Muffin', 'Muffin (Azul)')
+		.replaceAll('Muffin', 'Muffin (Azul)');
 }
 
 export async function parseThreadToSchedule(
@@ -394,7 +392,7 @@ export function formatScheduleForDiscord(
 			december: 'Dezembro',
 		};
 		const ptMonth = enToPtMonth[enMonth] || ukTitleMatch[1];
-		title = `(UK:) Eventos, ${ptMonth} ${year}`;
+		title = `(UK) Eventos, ${ptMonth} ${year}`;
 	}
 	lines.push(`**${title}**`);
 
