@@ -16,12 +16,17 @@ jobs:
       - name: Check Lisbon time
         id: timecheck
         run: |
-          HOUR=$(TZ="Europe/Lisbon" date +'%H')
-          echo "It's $(TZ="Europe/Lisbon" date) in Lisbon."
-          if [ "$HOUR" = "00" ]; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Triggered via workflow_dispatch, always running."
             echo "run_job=true" >> $GITHUB_ENV
           else
-            echo "run_job=false" >> $GITHUB_ENV
+            HOUR=$(TZ="Europe/Lisbon" date +'%H')
+            echo "It's $(TZ="Europe/Lisbon" date) in Lisbon."
+            if [ "$HOUR" = "00" ]; then
+              echo "run_job=true" >> $GITHUB_ENV
+            else
+              echo "run_job=false" >> $GITHUB_ENV
+            fi
           fi
           
       - name: Checkout repository
@@ -66,3 +71,4 @@ jobs:
             git commit -m "Refresh Tigerghost Metin2 Events - $(date)"
             git push
           fi
+ 

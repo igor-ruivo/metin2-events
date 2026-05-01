@@ -2,7 +2,7 @@ name: Metin2 Daily Event Reminder
 
 on:
   schedule:
-    - cron: '0 11,12 * * *'
+    - cron: '0 12 * * *'
   workflow_dispatch: # Allow manual trigger
 
 permissions:
@@ -20,15 +20,8 @@ jobs:
             echo "run_job=false" >> $GITHUB_ENV
             exit 0
           fi
-
-          HOUR=$(TZ="Europe/Lisbon" date +'%H')
-          echo "It's $(TZ="Europe/Lisbon" date) in Lisbon."
-
-          if [ "$HOUR" = "12" ]; then
-            echo "run_job=true" >> $GITHUB_ENV
-          else
-            echo "run_job=false" >> $GITHUB_ENV
-          fi
+          
+          echo "run_job=true" >> $GITHUB_ENV
 
       - name: Checkout repository
         if: env.run_job == 'true'
