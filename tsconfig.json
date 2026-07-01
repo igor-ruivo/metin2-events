@@ -1,8 +1,7 @@
 {
 	"extends": "@ti-platform/aide-build-tools/tsconfig.base.json",
 	"compilerOptions": {
-		"module": "Node16",
-		"moduleResolution": "Node16",
+		"moduleResolution": "Node",
 		"noEmit": true,
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitOverride": true,
